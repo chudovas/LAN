@@ -1,28 +1,61 @@
 ﻿open System
 
-type System = Windows = 0 | Linux = 1 | MacOS = 2
+/// <summary>
+/// enum, отвечающий за тип ОС.
+/// </summary>
+type System = Windows | Linux | MacOS
 
+/// <summary>
+/// Класс операционной системы компьютера.
+/// </summary>
 type OS() =
-    let mutable pW = 0.0 
-    let mutable  pL = 0.0 
-    let mutable  pMOS = 0.0 
+    let mutable pWindows = 0.0 
+    let mutable pLinux = 0.0 
+    let mutable pMacOS = 0.0 
     
-    member this.setProbInfect pForWindows pForLinux pForMacOS =
-        pW <- pForWindows
-        pL <- pForLinux
-        pMOS <- pForMacOS
+    /// <summary>
+    /// Изменение вероятности заражения для ОС.
+    /// </summary>
+    /// <param name="pForWindows">Вероятность для Windows</param>
+    /// <param name="pForLinux">Вероятность для Linux</param>
+    /// <param name="pForMacOS">Вероятность для MacOS</param>
+    member this.SetProbInfect pForWindows pForLinux pForMacOS =
+        pWindows <- pForWindows
+        pLinux <- pForLinux
+        pMacOS <- pForMacOS
 
-    member this.getProbOfInfect(os : System) = 
+    /// <summary>
+    /// Функция, для ОС позволяющая получить вероятность заражения.
+    /// </summary>
+    /// <param name="os">Текущая операционная система</param>
+    member this.GetProbInfect(os : System) = 
         match os with
-        | System.Windows -> pW
-        | System.Linux -> pL
-        | System.MacOS -> pMOS
+        | System.Windows -> pWindows
+        | System.Linux -> pLinux
+        | System.MacOS -> pMacOS
     
+/// <summary>
+/// Класс компьютера.
+/// </summary>
 type Comp(oSystem : System, isInfected : bool) =
+    /// <summary>
+    /// Тип ОС
+    /// </summary>
     member val os = oSystem with get, set
-    member val infect = isInfected with get, set
+
+    /// <summary>
+    /// Флаг, показывающий, заражен ли компьютер
+    /// </summary>
+    member val infected = isInfected with get, set
+
+    /// <summary>
+    /// Флаг, показывающий, заразился ли компьютер сегодня.
+    /// </summary>
     member val isInfectedToday = true with get, set
 
+/// <summary>
+/// Тип локальной сети
+/// </summary>
 type Lan(newComputers : array<Comp>, newAdMatrix : bool[,], newOS : OS) =
     let mutable computers = newComputers
     let mutable adMatrix = newAdMatrix
@@ -31,21 +64,21 @@ type Lan(newComputers : array<Comp>, newAdMatrix : bool[,], newOS : OS) =
     do
         if (computers.Length <> Array2D.length1 adMatrix || computers.Length <> Array2D.length2 adMatrix)
         then 
-            raise (ArgumentException("Lenght of computers array disagree with length of matrix!"))
+            raise (ArgumentException("Length of computers array disagree with length of matrix!"))
 
     let isInfectedNow numOfComp =
-        rand.Next(100) <= int (100.0 * os.getProbOfInfect(computers.[numOfComp].os))
+        rand.Next(100) <= int (100.0 * os.GetProbInfect(computers.[numOfComp].os))
 
     let infectAllNeighbor numOfComp =
         for numOfNeigh in 0..computers.Length - 1 do        
-            if (adMatrix.[numOfComp, numOfNeigh] = true && not computers.[numOfNeigh].infect && (isInfectedNow numOfNeigh))
+            if (adMatrix.[numOfComp, numOfNeigh] = true && not computers.[numOfNeigh].infected && (isInfectedNow numOfNeigh))
             then
-                computers.[numOfNeigh].infect <- true
+                computers.[numOfNeigh].infected <- true
                 computers.[numOfNeigh].isInfectedToday <- true
 
     let nextStep() =
         for i in 0..computers.Length - 1 do
-            if (computers.[i].infect = true && computers.[i].isInfectedToday = false)
+            if (computers.[i].infected = true && computers.[i].isInfectedToday = false)
             then
                 infectAllNeighbor i 
 
@@ -53,10 +86,16 @@ type Lan(newComputers : array<Comp>, newAdMatrix : bool[,], newOS : OS) =
         for comp in computers do
             comp.isInfectedToday <- false
 
+    /// <summary>
+    /// Получить следующий шаг состояния локальной сети.
+    /// </summary>
     member this.NextStep() =
         nextStepBegin() 
         nextStep()
     
+    /// <summary>
+    /// Получить массив компьютеров.
+    /// </summary>
     member this.Computers
         with get() =
             computers
